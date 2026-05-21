@@ -122,6 +122,8 @@ struct MainView: View {
     @ObservedObject var manager: WeChatManager
     @State private var showInputDialog = false
     @State private var copyCount = 1
+    @State private var deleteTarget: Int? = nil
+    @State private var showDeleteAlert = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -138,6 +140,22 @@ struct MainView: View {
         .sheet(isPresented: $showInputDialog) {
             countInputSheet
         }
+        .alert("确认删除", isPresented: $showDeleteAlert) {
+            Button("删除", role: .destructive) {
+                if let num = deleteTarget {
+                    Task { await manager.deleteCopy(num: num) }
+                }
+            }
+            Button("取消", role: .cancel) {
+                deleteTarget = nil
+            }
+        } message: {
+            if let num = deleteTarget, manager.runningStatus[num] == true {
+                Text("WeChat\(num).app 正在运行中，删除后将强制关闭并清除数据。确认删除？")
+            } else if let num = deleteTarget {
+                Text("确认删除 WeChat\(num).app？相关数据将一并清除。")
+            }
+        }
         .alert("操作失败", isPresented: Binding(
             get: { !manager.errorMessage.isEmpty },
             set: { if !$0 { manager.errorMessage = "" } }
@@ -145,6 +163,12 @@ struct MainView: View {
             Button("确定") { manager.errorMessage = "" }
         } message: {
             Text(manager.errorMessage)
+        }
+        .task {
+            while !Task.isCancelled {
+                manager.refreshRunningStatus()
+                try? await Task.sleep(for: .seconds(3))
+            }
         }
     }
 
@@ -201,6 +225,7 @@ struct MainView: View {
 
     private var instanceList: some View {
         VStack(alignment: .leading, spacing: 10) {
+            // Original
             HStack(spacing: 10) {
                 Circle()
                     .fill(Color.wechatGreen)
@@ -214,9 +239,21 @@ struct MainView: View {
                     .background(Color.wechatGreen.opacity(0.15))
                     .foregroundStyle(Color.wechatGreen)
                     .clipShape(Capsule())
+
+                if manager.isOriginalRunning {
+                    Text("运行中")
+                        .font(.caption2)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.green.opacity(0.12))
+                        .foregroundStyle(.green)
+                        .clipShape(Capsule())
+                }
+
                 Spacer()
             }
 
+            // Copies
             ForEach(manager.wechatCopies, id: \.self) { num in
                 HStack(spacing: 10) {
                     Circle()
@@ -229,9 +266,31 @@ struct MainView: View {
                         .padding(.horizontal, 6)
                         .padding(.vertical, 2)
                         .background(Color.orange.opacity(0.15))
-                        .foregroundStyle(Color.orange)
+                        .foregroundStyle(.orange)
                         .clipShape(Capsule())
+
+                    if manager.runningStatus[num] == true {
+                        Text("运行中")
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.green.opacity(0.12))
+                            .foregroundStyle(.green)
+                            .clipShape(Capsule())
+                    }
+
                     Spacer()
+
+                    Button {
+                        deleteTarget = num
+                        showDeleteAlert = true
+                    } label: {
+                        Image(systemName: "trash")
+                            .font(.caption)
+                            .foregroundStyle(.red.opacity(0.7))
+                    }
+                    .buttonStyle(.borderless)
+                    .help("删除此副本")
                 }
             }
         }

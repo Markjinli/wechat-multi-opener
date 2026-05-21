@@ -80,6 +80,16 @@ enum SudoManager {
         return runScript(script, password: password)
     }
 
+    static func deleteCopy(num: Int, password: String) -> Bool {
+        let script = """
+        pkill -f "WeChat\(num).app" 2>/dev/null || true
+        sleep 1
+        rm -rf "/Applications/WeChat\(num).app"
+        rm -rf "$HOME/Library/Containers/com.tencent.xinWeChat\(num)"
+        """
+        return runScript(script, password: password)
+    }
+
     // MARK: - Private
 
     private static func runCommand(_ command: String, password: String) -> (success: Bool, output: String) {

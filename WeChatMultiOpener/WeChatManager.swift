@@ -1,4 +1,5 @@
 import Foundation
+import AppKit
 
 @MainActor
 class WeChatManager: ObservableObject {
@@ -9,11 +10,16 @@ class WeChatManager: ObservableObject {
     @Published var progressMessage = ""
     @Published var errorMessage = ""
 
+    @Published var isOriginalRunning = false
+    @Published var runningStatus: [Int: Bool] = [:]
+
     private var password: String?
     private let basePath = "/Applications"
     private let originalName = "WeChat.app"
 
     var totalInstances: Int { (hasOriginalWeChat ? 1 : 0) + wechatCopies.count }
+
+    // MARK: - Auth
 
     func verifyPassword(_ pw: String) async -> Bool {
         let pwCopy = pw
@@ -29,6 +35,8 @@ class WeChatManager: ObservableObject {
         return result
     }
 
+    // MARK: - Scan
+
     func scanWeChat() {
         hasOriginalWeChat = FileManager.default.fileExists(atPath: "\(basePath)/\(originalName)")
         wechatCopies = []
@@ -37,7 +45,26 @@ class WeChatManager: ObservableObject {
                 wechatCopies.append(i)
             }
         }
+        refreshRunningStatus()
     }
+
+    // MARK: - Running Status
+
+    func refreshRunningStatus() {
+        isOriginalRunning = NSWorkspace.shared.runningApplications.contains {
+            $0.bundleURL?.path == "\(basePath)/\(originalName)"
+        }
+
+        var status: [Int: Bool] = [:]
+        for num in wechatCopies {
+            status[num] = NSWorkspace.shared.runningApplications.contains {
+                $0.bundleURL?.path == "\(basePath)/WeChat\(num).app"
+            }
+        }
+        runningStatus = status
+    }
+
+    // MARK: - Create
 
     func createCopies(count: Int) async {
         guard let password = password else { return }
@@ -67,6 +94,8 @@ class WeChatManager: ObservableObject {
         progressMessage = ""
     }
 
+    // MARK: - Fix
+
     func fixAllCopies() async {
         guard let password = password, !wechatCopies.isEmpty else { return }
         isProcessing = true
@@ -89,6 +118,29 @@ class WeChatManager: ObservableObject {
         isProcessing = false
         progressMessage = ""
     }
+
+    // MARK: - Delete
+
+    func deleteCopy(num: Int) async {
+        guard let password = password else { return }
+        isProcessing = true
+        progressMessage = "正在删除 WeChat\(num).app..."
+
+        let pw = password
+        let success = await Task.detached {
+            SudoManager.deleteCopy(num: num, password: pw)
+        }.value
+
+        if !success {
+            errorMessage = "删除 WeChat\(num).app 失败"
+        }
+
+        scanWeChat()
+        isProcessing = false
+        progressMessage = ""
+    }
+
+    // MARK: - Private
 
     private func findNextAvailableNumber() -> Int {
         var num = 2
