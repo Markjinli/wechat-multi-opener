@@ -33,6 +33,23 @@ struct ContentView: View {
     }
 }
 
+// MARK: - Tag View
+
+struct TagView: View {
+    let text: String
+    let color: Color
+
+    var body: some View {
+        Text(text)
+            .font(.caption)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(color.opacity(0.15))
+            .foregroundStyle(color)
+            .clipShape(Capsule())
+    }
+}
+
 // MARK: - Password View
 
 struct PasswordView: View {
@@ -43,32 +60,33 @@ struct PasswordView: View {
     @FocusState private var isFieldFocused: Bool
 
     var body: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 24) {
             Spacer()
 
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable()
-                .frame(width: 64, height: 64)
-                .clipShape(RoundedRectangle(cornerRadius: 14))
+                .frame(width: 72, height: 72)
+                .clipShape(RoundedRectangle(cornerRadius: 16))
 
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 Text("微信多开助手开源版")
-                    .font(.title2.bold())
+                    .font(.title.bold())
                 Text("需要管理员权限以执行操作")
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
 
-            VStack(spacing: 10) {
+            VStack(spacing: 12) {
                 SecureField("请输入开机密码", text: $password)
                     .textFieldStyle(.roundedBorder)
-                    .frame(width: 280)
+                    .font(.body)
+                    .frame(width: 300, height: 32)
                     .focused($isFieldFocused)
                     .onSubmit { verify() }
 
                 if showError {
                     Text("密码错误，请重试")
-                        .font(.caption)
+                        .font(.callout)
                         .foregroundStyle(.red)
                         .transition(.opacity)
                 }
@@ -82,9 +100,10 @@ struct PasswordView: View {
                                 .controlSize(.small)
                         } else {
                             Text("验证")
+                                .font(.body)
                         }
                     }
-                    .frame(width: 280, height: 36)
+                    .frame(width: 300, height: 38)
                 }
                 .buttonStyle(.borderedProminent)
                 .tint(Color.wechatGreen)
@@ -176,13 +195,13 @@ struct MainView: View {
 
     private var header: some View {
         HStack {
-            HStack(spacing: 8) {
+            HStack(spacing: 10) {
                 Image(nsImage: NSApp.applicationIconImage)
                     .resizable()
-                    .frame(width: 22, height: 22)
-                    .clipShape(RoundedRectangle(cornerRadius: 5))
+                    .frame(width: 26, height: 26)
+                    .clipShape(RoundedRectangle(cornerRadius: 6))
                 Text("微信多开助手开源版")
-                    .font(.title3.bold())
+                    .font(.title3.weight(.semibold))
             }
             Spacer()
 
@@ -191,7 +210,7 @@ struct MainView: View {
                     Task { await manager.fixAllCopies() }
                 } label: {
                     Label("修复多开错误", systemImage: "wrench.and.screwdriver")
-                        .font(.caption)
+                        .font(.callout)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -202,14 +221,14 @@ struct MainView: View {
                 manager.scanWeChat()
             } label: {
                 Image(systemName: "arrow.clockwise")
-                    .font(.caption)
+                    .font(.callout)
             }
             .buttonStyle(.bordered)
             .controlSize(.small)
             .disabled(manager.isProcessing)
         }
         .padding(.horizontal, 24)
-        .padding(.vertical, 16)
+        .padding(.vertical, 14)
     }
 
     // MARK: - Has WeChat
@@ -224,30 +243,18 @@ struct MainView: View {
     }
 
     private var instanceList: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 14) {
             // Original
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 Circle()
                     .fill(Color.wechatGreen)
                     .frame(width: 10, height: 10)
                 Text("微信")
-                    .font(.subheadline)
-                Text("原版")
-                    .font(.caption2)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 2)
-                    .background(Color.wechatGreen.opacity(0.15))
-                    .foregroundStyle(Color.wechatGreen)
-                    .clipShape(Capsule())
+                    .font(.body.weight(.medium))
+                TagView(text: "原版", color: .wechatGreen)
 
                 if manager.isOriginalRunning {
-                    Text("运行中")
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.green.opacity(0.12))
-                        .foregroundStyle(.green)
-                        .clipShape(Capsule())
+                    TagView(text: "运行中", color: .green)
                 }
 
                 Spacer()
@@ -255,28 +262,16 @@ struct MainView: View {
 
             // Copies
             ForEach(manager.wechatCopies, id: \.self) { num in
-                HStack(spacing: 10) {
+                HStack(spacing: 12) {
                     Circle()
                         .fill(Color.orange)
                         .frame(width: 10, height: 10)
                     Text("微信\(num)")
-                        .font(.subheadline)
-                    Text("副本")
-                        .font(.caption2)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(Color.orange.opacity(0.15))
-                        .foregroundStyle(.orange)
-                        .clipShape(Capsule())
+                        .font(.body.weight(.medium))
+                    TagView(text: "副本", color: .orange)
 
                     if manager.runningStatus[num] == true {
-                        Text("运行中")
-                            .font(.caption2)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.green.opacity(0.12))
-                            .foregroundStyle(.green)
-                            .clipShape(Capsule())
+                        TagView(text: "运行中", color: .green)
                     }
 
                     Spacer()
@@ -286,16 +281,16 @@ struct MainView: View {
                         showDeleteAlert = true
                     } label: {
                         Image(systemName: "trash")
-                            .font(.caption)
-                            .foregroundStyle(.red.opacity(0.7))
+                            .font(.callout)
+                            .foregroundStyle(.red.opacity(0.6))
                     }
                     .buttonStyle(.borderless)
                     .help("删除此副本")
                 }
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 20)
+        .padding(.horizontal, 28)
+        .padding(.top, 24)
     }
 
     private var actionButton: some View {
@@ -303,22 +298,22 @@ struct MainView: View {
             showInputDialog = true
         } label: {
             Label("一键多开微信", systemImage: "plus.circle.fill")
-                .font(.headline)
-                .frame(width: 240, height: 48)
+                .font(.body.weight(.semibold))
+                .frame(width: 260, height: 46)
         }
         .buttonStyle(.borderedProminent)
         .tint(Color.wechatGreen)
     }
 
     private var footer: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 10) {
             Text("当前共 \(manager.totalInstances) 个微信实例")
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.secondary)
             FooterLink()
         }
-        .padding(.top, 12)
-        .padding(.bottom, 20)
+        .padding(.top, 14)
+        .padding(.bottom, 22)
     }
 
     // MARK: - No WeChat
@@ -331,11 +326,11 @@ struct MainView: View {
                 .font(.system(size: 48))
                 .foregroundStyle(.secondary)
 
-            VStack(spacing: 4) {
+            VStack(spacing: 6) {
                 Text("未检测到微信软件")
-                    .font(.title3.bold())
+                    .font(.title3.weight(.semibold))
                 Text("请先安装微信后再使用多开功能")
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
 
@@ -345,7 +340,8 @@ struct MainView: View {
                 }
             } label: {
                 Label("去 App Store 安装", systemImage: "arrow.down.circle.fill")
-                    .frame(width: 220, height: 44)
+                    .font(.body.weight(.medium))
+                    .frame(width: 240, height: 46)
             }
             .buttonStyle(.borderedProminent)
             .tint(Color.wechatGreen)
@@ -360,18 +356,18 @@ struct MainView: View {
 
     private var countInputSheet: some View {
         VStack(spacing: 24) {
-            VStack(spacing: 6) {
+            VStack(spacing: 8) {
                 Text("多开微信")
-                    .font(.title3.bold())
+                    .font(.title3.weight(.semibold))
                 Text("输入需要额外创建的微信数量")
-                    .font(.subheadline)
+                    .font(.body)
                     .foregroundStyle(.secondary)
             }
 
             HStack {
                 Stepper {
                     Text("多开 **\(copyCount)** 个")
-                        .font(.title3)
+                        .font(.title3.weight(.medium))
                 } onIncrement: {
                     copyCount = min(copyCount + 1, 10)
                 } onDecrement: {
@@ -380,7 +376,7 @@ struct MainView: View {
             }
 
             Text("将创建 \(copyCount) 个微信副本，加上原版共 \(manager.totalInstances + copyCount) 个实例")
-                .font(.caption)
+                .font(.callout)
                 .foregroundStyle(.secondary)
 
             HStack(spacing: 16) {
@@ -388,7 +384,7 @@ struct MainView: View {
                     showInputDialog = false
                 }
                 .keyboardShortcut(.cancelAction)
-                .frame(width: 100)
+                .frame(width: 110, height: 36)
 
                 Button("确定") {
                     showInputDialog = false
@@ -398,11 +394,11 @@ struct MainView: View {
                 .keyboardShortcut(.defaultAction)
                 .buttonStyle(.borderedProminent)
                 .tint(Color.wechatGreen)
-                .frame(width: 100)
+                .frame(width: 110, height: 36)
             }
         }
         .padding(32)
-        .frame(width: 360)
+        .frame(width: 380)
     }
 }
 
@@ -415,8 +411,8 @@ struct FooterLink: View {
                 Image(systemName: "chevron.left.forwardslash.chevron.right")
                 Text("前往项目 GitHub 仓库")
             }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
+            .font(.callout)
+            .foregroundStyle(Color.wechatGreen.opacity(0.8))
         }
         .buttonStyle(.plain)
     }
@@ -436,7 +432,7 @@ struct ProcessingOverlay: View {
                 .controlSize(.large)
                 .tint(.white)
             Text(message)
-                .font(.subheadline)
+                .font(.callout)
                 .foregroundStyle(.primary)
         }
         .padding(.horizontal, 40)
