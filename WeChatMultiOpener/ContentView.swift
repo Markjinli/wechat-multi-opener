@@ -151,9 +151,9 @@ struct MainView: View {
             }
         } message: {
             if let num = deleteTarget, manager.runningStatus[num] == true {
-                Text("WeChat\(num).app 正在运行中，删除后将强制关闭并清除数据。确认删除？")
+                Text("微信\(num) 正在运行中，删除后将强制关闭并清除数据。确认删除？")
             } else if let num = deleteTarget {
-                Text("确认删除 WeChat\(num).app？相关数据将一并清除。")
+                Text("确认删除 微信\(num)？相关数据将一并清除。")
             }
         }
         .alert("操作失败", isPresented: Binding(
@@ -230,7 +230,7 @@ struct MainView: View {
                 Circle()
                     .fill(Color.wechatGreen)
                     .frame(width: 10, height: 10)
-                Text("WeChat.app")
+                Text("微信")
                     .font(.subheadline)
                 Text("原版")
                     .font(.caption2)
@@ -259,7 +259,7 @@ struct MainView: View {
                     Circle()
                         .fill(Color.orange)
                         .frame(width: 10, height: 10)
-                    Text("WeChat\(num).app")
+                    Text("微信\(num)")
                         .font(.subheadline)
                     Text("副本")
                         .font(.caption2)
@@ -410,13 +410,15 @@ struct MainView: View {
 
 struct FooterLink: View {
     var body: some View {
-        HStack(spacing: 4) {
-            Image(systemName: "chevron.left.forwardslash.chevron.right")
-                .font(.system(size: 9))
-            Link(appRepoURL, destination: URL(string: appRepoURL)!)
+        Link(destination: URL(string: appRepoURL)!) {
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.left.forwardslash.chevron.right")
+                Text("前往项目 GitHub 仓库")
+            }
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
         }
-        .font(.system(size: 10))
-        .foregroundStyle(.tertiary)
+        .buttonStyle(.plain)
     }
 }
 
