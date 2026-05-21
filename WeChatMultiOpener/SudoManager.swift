@@ -82,10 +82,26 @@ enum SudoManager {
 
     static func deleteCopy(num: Int, password: String) -> Bool {
         let script = """
-        pkill -f "WeChat\(num).app" 2>/dev/null || true
+        # 1. 尝试优雅退出
+        osascript -e 'tell application id "com.tencent.xinWeChat\(num)" to quit' 2>/dev/null || true
         sleep 1
-        rm -rf "/Applications/WeChat\(num).app"
-        rm -rf "$HOME/Library/Containers/com.tencent.xinWeChat\(num)"
+
+        # 2. 强制结束残留进程（用完整可执行路径匹配，避免误杀）
+        ps aux | grep "WeChat\(num).app/Contents/MacOS" | grep -v grep | awk '{print $2}' | xargs kill 2>/dev/null || true
+        sleep 1
+
+        # 3. 删除 app（忽略错误继续执行）
+        rm -rf "/Applications/WeChat\(num).app" 2>/dev/null || true
+
+        # 4. 删除数据目录（$SUDO_USER 确保指向真实用户主目录）
+        if [ -n "$SUDO_USER" ]; then
+            rm -rf "/Users/$SUDO_USER/Library/Containers/com.tencent.xinWeChat\(num)" 2>/dev/null || true
+        else
+            rm -rf "$HOME/Library/Containers/com.tencent.xinWeChat\(num)" 2>/dev/null || true
+        fi
+
+        # 5. 验证是否删除成功
+        [ ! -d "/Applications/WeChat\(num).app" ]
         """
         return runScript(script, password: password)
     }

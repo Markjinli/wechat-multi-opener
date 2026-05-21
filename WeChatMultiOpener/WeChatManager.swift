@@ -124,18 +124,19 @@ class WeChatManager: ObservableObject {
     func deleteCopy(num: Int) async {
         guard let password = password else { return }
         isProcessing = true
-        progressMessage = "正在删除 WeChat\(num).app..."
+        progressMessage = "正在删除 微信\(num)..."
 
         let pw = password
-        let success = await Task.detached {
+        let _ = await Task.detached {
             SudoManager.deleteCopy(num: num, password: pw)
         }.value
 
-        if !success {
-            errorMessage = "删除 WeChat\(num).app 失败"
+        // 以实际结果为准：刷新后如果 app 已不在，则视为成功
+        scanWeChat()
+        if wechatCopies.contains(num) {
+            errorMessage = "删除 微信\(num) 失败，请重试"
         }
 
-        scanWeChat()
         isProcessing = false
         progressMessage = ""
     }
